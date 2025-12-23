@@ -12,20 +12,19 @@
   <main class="calculator">
     <header>
       <h1>공학용 계산기</h1>
-        <div class="mode">
-          <label><input type="checkbox" id="angleToggle"> Degrees</label>
-          <label class="theme-label"><input type="checkbox" id="themeToggle"> Dark</label>
-        </div>
+      <label class="theme-label"><input type="checkbox" id="themeToggle"> Dark</label>
     </header>
 
     <section class="display-area">
       <div id="history" class="history"></div>
       <input id="display" class="display" type="text" readonly />
-    </section>
-
+      <div class="mode-selector">
+        <label><input type="radio" id="degRadToggle" name="degRad" value="deg"> Deg</label>
+        <label><input type="radio" name="degRad" value="rad"> Rad</label>
+      </div>
     <section class="buttons">
       <!-- row 1 -->
-      <button data-value="!" title="Factorial">x!</button>
+      <button data-value="!">x!</button>
       <button data-value="(">(</button>
       <button data-value=")">)</button>
       <button data-value="%">%</button>
@@ -34,7 +33,7 @@
       <button data-action="eval" class="equals">=</button>
 
       <!-- row 2 -->
-      <button data-value="asin(" title="Inverse">Inv</button>
+      <button data-value="asin(">Inv</button>
       <button data-value="sin(">sin</button>
       <button data-value="log(">ln</button>
       <button data-value="7">7</button>
@@ -54,7 +53,7 @@
       <!-- row 4 -->
       <button data-value="e">e</button>
       <button data-value="tan(">tan</button>
-      <button data-value="sqrt(">√</button>
+      <button data-value="exp(">exp</button>
       <button data-value="1">1</button>
       <button data-value="2">2</button>
       <button data-value="3">3</button>
@@ -62,11 +61,11 @@
 
       <!-- row 5 -->
       <button data-action="ans">Ans</button>
-      <button data-value="^" title="Power">x^y</button>
+      <button data-value="^">x^y</button>
+      <button data-value="sqrt(">√</button>
       <button data-value=".">.</button>
       <button data-action="back">⌫</button>
-      <button data-value="">del</button>
-      <button data-value="+">+</button>
+      <button data-value="+" style="grid-column:span 2">+</button>
     </section>
 
     <footer>
