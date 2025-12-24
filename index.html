@@ -17,25 +17,28 @@
 
     <section class="display-area">
       <div id="history" class="history"></div>
-      <input id="display" class="display" type="text" readonly />
-      <div class="mode-selector">
-        <label><input type="radio" id="degRadToggle" name="degRad" value="deg"> Deg</label>
-        <label><input type="radio" name="degRad" value="rad"> Rad</label>
+      <div id="status" class="status" aria-live="polite"></div>
+      <div id="display" class="display" role="textbox" aria-readonly="true"></div>
+      
+      <div class="controls-row">
+        <div class="mode-selector">
+          <label><input type="radio" name="degRad" value="deg"> Deg</label>
+          <label><input type="radio" id="degRadToggle" name="degRad" value="rad" checked> Rad</label>
+        </div>
       </div>
     <section class="buttons">
       <!-- row 1 -->
       <button data-value="!">x!</button>
       <button data-value="(">(</button>
       <button data-value=")">)</button>
-      <button data-value="%">%</button>
+      <button data-action="back">⌫</button>
       <button data-action="clear">AC</button>
-      <button data-value="0">0</button>
-      <button data-action="eval" class="equals">=</button>
+      <button data-action="eval" class="equals" style="grid-column:span 2">=</button>
 
       <!-- row 2 -->
       <button data-value="asin(">Inv</button>
       <button data-value="sin(">sin</button>
-      <button data-value="log(">ln</button>
+      <button data-value="ln(">ln</button>
       <button data-value="7">7</button>
       <button data-value="8">8</button>
       <button data-value="9">9</button>
@@ -63,9 +66,10 @@
       <button data-action="ans">Ans</button>
       <button data-value="^">x^y</button>
       <button data-value="sqrt(">√</button>
+      <button data-value="%">%</button>
+      <button data-value="0">0</button>
       <button data-value=".">.</button>
-      <button data-action="back">⌫</button>
-      <button data-value="+" style="grid-column:span 2">+</button>
+      <button data-value="+">+</button>
     </section>
 
     <footer>
