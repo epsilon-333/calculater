@@ -2,10 +2,14 @@
 body{display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:linear-gradient(180deg,#eef2f7,#dbe7f5)}
 .calculator{width:360px;background:#fff;border-radius:12px;box-shadow:0 6px 24px rgba(24,39,75,0.12);padding:12px}
 .calculator header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.display-area{margin-bottom:8px}
-.display{width:100%;height:56px;font-size:20px;padding:8px;border-radius:8px;border:1px solid #e6e9ef}
+.display-area{margin-bottom:8px; position:relative}
+.display{width:100%;height:56px;font-size:20px;padding:8px 12px;border-radius:8px;border:1px solid #e6e9ef;text-align:right}
 .history{height:60px;overflow:auto;font-size:12px;color:#4b5563;margin-bottom:6px}
-.mode-selector{display:flex;gap:10px;margin-top:6px;font-size:12px;justify-content:flex-end}
+.mode-selector{display:flex;gap:12px;margin:0;font-size:14px;align-items:center}
+.controls-row{display:flex;gap:12px;align-items:center;justify-content:flex-start;margin-top:8px}
+.log-base-selector{font-size:14px;display:flex;gap:8px;align-items:center}
+.log-base-selector select{font-size:13px;padding:4px}
+.log-base-selector input{font-size:13px;padding:4px;width:70px;display:none}
 .buttons{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
 .buttons button{height:40px;border-radius:8px;border:0;background:#f3f6fb;color:#0b1220;font-weight:600;font-size:12px;cursor:pointer}
 .buttons button.equals{background:#0b79ff;color:#fff}
@@ -21,7 +25,18 @@ body.dark-theme{background:linear-gradient(180deg,#2f3438,#1f2224);color:#e6eef8
 .dark-theme .buttons button.equals{background:#6b7280}
 .dark-theme .buttons button[data-action="clear"]{background:#ff6666}
 
+/* ensure history text is readable in dark mode */
+.dark-theme .history{color:#ffffff}
+
+/* inline status message above display */
+.status{height:18px;font-size:13px;text-align:right;margin-bottom:4px;color:#b91c1c;visibility:hidden}
+.status.visible{visibility:visible}
+
 button:focus{outline:3px solid #bde0ff}
+
+/* close-paren styles used inside the display HTML */
+.close-paren.dim{opacity:0.35;color:inherit}
+.close-paren.active{opacity:1;color:inherit;font-weight:inherit}
 
 /* Responsive: Mobile Landscape */
 @media(orientation:landscape) and (max-height:600px){
@@ -31,6 +46,19 @@ button:focus{outline:3px solid #bde0ff}
   .buttons button{height:36px;font-size:11px}
   .display{height:48px;font-size:16px;padding:6px}
   .history{height:40px}
+}
+
+/* Mobile: show horizontal side-by-side layout for small screens */
+@media (max-width: 640px){
+  body{height:auto;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:8px}
+  .calculator{width:100%;max-width:980px;padding:10px;display:flex;flex-direction:row;gap:10px}
+  .display-area{width:40%;margin-bottom:0}
+  .history{height:80px;overflow:auto;margin-bottom:8px}
+  .display{height:72px;font-size:18px;padding:8px}
+  .controls-row{margin-top:6px;display:flex;flex-direction:column;gap:6px}
+  .buttons{width:60%;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .buttons button{height:44px;font-size:14px}
+  footer{display:none}
 }
 
 /* Desktop */
