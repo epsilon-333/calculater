@@ -51,12 +51,15 @@ button:focus{outline:3px solid #bde0ff}
 /* Mobile: show horizontal side-by-side layout for small screens */
 @media (max-width: 640px){
   body{height:auto;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:8px}
-  .calculator{width:100%;max-width:980px;padding:10px;display:flex;flex-direction:row;gap:10px}
-  .display-area{width:40%;margin-bottom:0}
+  .calculator{width:100%;max-width:980px;padding:10px}
+  .display-area{width:100%;margin-bottom:8px}
   .history{height:80px;overflow:auto;margin-bottom:8px}
   .display{height:72px;font-size:18px;padding:8px}
   .controls-row{margin-top:6px;display:flex;flex-direction:column;gap:6px}
-  .buttons{width:60%;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  /* show only the rightmost 4 columns: clip and shift the 7-column grid */
+  .buttons-clip{overflow:hidden;width:100%}
+  .buttons{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;/* full 7-col grid */
+    width:100%;transform:translateX(calc(-100% * 3 / 7));}
   .buttons button{height:44px;font-size:14px}
   footer{display:none}
 }
@@ -68,3 +71,8 @@ button:focus{outline:3px solid #bde0ff}
   .buttons button{height:50px;font-size:15px}
   .display{height:68px;font-size:22px;padding:10px}
 }
+  .buttons{gap:10px}
+  .buttons button{height:50px;font-size:15px}
+  .display{height:68px;font-size:22px;padding:10px}
+}
+
