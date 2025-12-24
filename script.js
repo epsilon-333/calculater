@@ -1,34 +1,139 @@
 (function(){
   const display = document.getElementById('display');
   const historyEl = document.getElementById('history');
+  const statusEl = document.getElementById('status');
   const degRadToggle = document.getElementById('degRadToggle');
   const themeToggle = document.getElementById('themeToggle');
   let ans = 0;
   let history = [];
   let lastInputWasOp = false;
+  let exprRaw = '';
+  let unmatchedParens = 0;
+  let parenActiveOnEval = false;
 
   function formatNumber(n){
-    const str = String(n);
-    if(str.includes('e') || str.includes('E')) return str;
-    const [intPart, decPart] = str.split('.');
+    // handle non-number results
+    if(n === null || n === undefined) return String(n);
+    if(typeof n !== 'number') return String(n);
+    if(!isFinite(n)) return String(n);
+
+    // if very close to an integer, show the integer
+    const INT_EPS = 1e-12;
+    if(Math.abs(n - Math.round(n)) < INT_EPS) return String(Math.round(n)).replace(/\B(?=(\d{4})+(?!\d))/g, ',');
+
+    // round to a reasonable number of significant digits to avoid floating-point noise
+    const PREC = 12; // significant digits
+    let s = Number(n).toPrecision(PREC);
+    // keep scientific notation as-is
+    if(s.toLowerCase().includes('e')) return s;
+    // convert to normalized decimal (removes trailing zeros)
+    s = parseFloat(s).toString();
+
+    // insert grouping every 4 digits into integer part (preserve previous behavior)
+    const [intPart, decPart] = s.split('.');
     const formatted = intPart.replace(/\B(?=(\d{4})+(?!\d))/g, ',');
     return decPart ? formatted + '.' + decPart : formatted;
   }
 
-  function appendToDisplay(text){
-    const isOp = /^[+\-*/]$/.test(text);
-    const curr = display.value || '';
-    if(isOp && lastInputWasOp && curr.length > 0) { 
-      display.value = curr.slice(0, -1) + text; 
-      return; 
+  function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function formatExpressionForDisplayHTML(expr){
+    // add commas every 4 digits for integer parts
+    const withCommas = expr.replace(/(\d+)(\.\d+)?/g, (m, intPart, decPart) => {
+      const formattedInt = intPart.replace(/\B(?=(\d{4})+(?!\d))/g, ',');
+      return decPart ? formattedInt + decPart : formattedInt;
+    });
+    // show nice symbols for multiply/divide in the display
+    const withSymbols = withCommas.replace(/\*/g, '×').replace(/\//g, '÷');
+    // escape and wrap any typed ')' characters so they can be styled
+    let html = escapeHtml(withSymbols).replace(/\)/g, '<span class="close-paren active">)</span>');
+    // if there are unmatched opens, append a dimmed (or active-on-eval) close paren
+    if(unmatchedParens > 0){
+      const cls = parenActiveOnEval ? 'close-paren active' : 'close-paren dim';
+      html += `<span class="${cls}">)</span>`;
     }
-    display.value = curr + text;
-    lastInputWasOp = isOp;
+    return html;
+  }
+
+  function showStatus(msg){
+    if(!statusEl) return;
+    statusEl.textContent = msg;
+    statusEl.classList.add('visible');
+  }
+
+  function clearStatus(){
+    if(!statusEl) return;
+    statusEl.textContent = '';
+    statusEl.classList.remove('visible');
+  }
+
+  function appendToDisplay(text){
+    clearStatus();
+    const isOp = /^[+\-*/]$/.test(text);
+    const isDigit = /^[0-9]$/.test(text);
+
+    // handle replacing initial 0 when inserting functions or other non-operator tokens
+    if(exprRaw === '0' && !isOp && !isDigit){
+      exprRaw = '';
+    }
+
+    // count parentheses in the incoming text so functions like "sin(" increment correctly
+    const opensInText = (String(text).match(/\(/g) || []).length;
+    const closesInText = (String(text).match(/\)/g) || []).length;
+    if(opensInText || closesInText){
+      unmatchedParens = Math.max(0, unmatchedParens + opensInText - closesInText);
+      parenActiveOnEval = false;
+    }
+
+    if(isDigit){
+      // find start of the current numeric token (digits and dot)
+      let tailStart = exprRaw.length;
+      for(let i = exprRaw.length - 1; i >= 0; i--){
+        const ch = exprRaw[i];
+        if((ch >= '0' && ch <= '9') || ch === '.') tailStart = i;
+        else break;
+      }
+      const tail = exprRaw.slice(tailStart);
+      // if current token is only leading zeros (e.g. "0" or "00"),
+      // replace with the new non-zero digit; if digit is 0 keep single zero
+      if(/^0+$/.test(tail)){
+        if(text === '0'){
+          if(tail === '') exprRaw += '0';
+          else exprRaw = exprRaw.slice(0, tailStart) + '0';
+        } else {
+          exprRaw = exprRaw.slice(0, tailStart) + text;
+        }
+      } else {
+        exprRaw += text;
+      }
+      lastInputWasOp = false;
+    } else {
+      // update parenthesis tracking
+      if(text === '('){ unmatchedParens++; parenActiveOnEval = false; }
+      else if(text === ')'){ unmatchedParens = Math.max(0, unmatchedParens - 1); parenActiveOnEval = false; }
+      // prevent consecutive operators: replace last operator with new one
+      if(isOp && lastInputWasOp && exprRaw.length > 0){
+        exprRaw = exprRaw.slice(0, -1) + text;
+      } else {
+        exprRaw += text;
+      }
+      lastInputWasOp = isOp;
+    }
+
+    display.innerHTML = formatExpressionForDisplayHTML(exprRaw);
   }
 
   function setDisplay(text){ 
-    display.value = String(text); 
-    lastInputWasOp = false; 
+    clearStatus();
+    // text may contain commas (from formatNumber), strip them for raw expression
+    exprRaw = String(text).replace(/,/g, '');
+    // recalc unmatched parentheses based on the raw expression
+    const opens = (exprRaw.match(/\(/g) || []).length;
+    const closes = (exprRaw.match(/\)/g) || []).length;
+    unmatchedParens = Math.max(0, opens - closes);
+    parenActiveOnEval = false;
+    lastInputWasOp = false;
+    display.innerHTML = formatExpressionForDisplayHTML(exprRaw);
   }
 
   function addHistory(expr, result){
@@ -41,7 +146,8 @@
   }
 
   function makeScope(){
-    const isDeg = degRadToggle.checked;
+    // determine if degrees mode is active by checking the selected radio value
+    const isDeg = (document.querySelector('input[name="degRad"]:checked') || {}).value === 'deg';
     const scope = {
       Ans: ans,
       pi: Math.PI,
@@ -56,8 +162,9 @@
       cosh: x => Math.cosh(x),
       tanh: x => Math.tanh(x),
       sqrt: x => Math.sqrt(x),
-      log: x => Math.log(x),
-      log10: x => Math.log10(x),
+      // ln and log10 kept for direct use
+      ln: x => Math.log(x),
+      log10: x => Math.log10 ? Math.log10(x) : Math.log(x)/Math.LN10,
       abs: x => Math.abs(x),
       exp: x => Math.exp(x),
       comb: (n,k) => {
@@ -73,17 +180,37 @@
     return scope;
   }
 
-  function evaluateExpression(expr){
-    expr = expr.replace(/÷/g, '/').replace(/×/g, '*').replace(/π/g, 'pi').replace(/Ans/g, 'Ans');
-    expr = expr.replace(/(\d+)\!/g, 'factorial($1)');
+  // show/hide custom base input
+  // log-base UI removed
+
+  function evaluateExpression(raw){
+    // use raw expression without commas
+    let expr = (raw !== undefined ? raw : exprRaw) || '';
+    // if expression is incomplete (ends with operator, decimal point, or has unmatched open parens),
+    // do not evaluate — show status and leave the expression unchanged
+    if(/[-+*/.]$/.test(expr) || expr.trim() === '' || unmatchedParens > 0 || /\($/.test(expr)){
+      showStatus('식이 완전하지 않습니다');
+      return;
+    }
+    expr = expr.replace(/,/g, '').replace(/÷/g, '/').replace(/×/g, '*').replace(/π/g, 'pi').replace(/Ans/g, 'Ans');
+    expr = expr.replace(/(\d+)!/g, 'factorial($1)');
+    // log10(x) -> (log(x)/log(10))로 치환 (math.js가 log10을 지원하지 않는 경우 대비)
+    expr = expr.replace(/log10\s*\(([^)]+)\)/g, '(log($1)/log(10))');
     const scope = makeScope();
+    clearStatus();
     try{
       const res = math.evaluate(expr, scope);
       ans = res;
       addHistory(expr, res);
       setDisplay(formatNumber(res));
+      // keep exprRaw as plain number for further ops
+      exprRaw = String(res);
+      // reset paren state
+      unmatchedParens = 0;
+      parenActiveOnEval = false;
     }catch(e){
       setDisplay('Error');
+      exprRaw = '';
     }
   }
 
@@ -91,17 +218,17 @@
     btn.addEventListener('click', ()=>{
       const v = btn.getAttribute('data-value');
       const a = btn.getAttribute('data-action');
-      if(a === 'clear'){ setDisplay(''); return; }
-      if(a === 'back'){ setDisplay(display.value.slice(0,-1)); return; }
+      if(a === 'clear'){ setDisplay('0'); return; }
+      if(a === 'back'){ setDisplay(exprRaw.slice(0,-1)); return; }
       if(a === 'ans'){ appendToDisplay('Ans'); return; }
-      if(a === 'eval'){ evaluateExpression(display.value); return; }
+      if(a === 'eval'){ evaluateExpression(); return; }
       if(v !== null && v !== '') appendToDisplay(v);
     });
   });
 
   window.addEventListener('keydown', (e)=>{
-    if(e.key === 'Enter' || e.key === '='){ evaluateExpression(display.value); e.preventDefault(); }
-    else if(e.key === 'Backspace'){ setDisplay(display.value.slice(0,-1)); e.preventDefault(); }
+    if(e.key === 'Enter' || e.key === '='){ evaluateExpression(); e.preventDefault(); }
+    else if(e.key === 'Backspace'){ setDisplay(exprRaw.slice(0,-1)); e.preventDefault(); }
     else if(/^[0-9+\-*/().]$/.test(e.key)){ appendToDisplay(e.key); e.preventDefault(); }
   });
 
@@ -126,9 +253,13 @@
   }
 
   (function init(){
-    setDisplay('');
+    setDisplay('0');
     const t = localStorage.getItem('calc_theme')||'light'; 
     applyTheme(t);
+    // clear persisted history on page load so previous search records are not retained after refresh
+    localStorage.removeItem('calc_history');
+    history = [];
+    historyEl.innerHTML = '';
     loadHistory();
   })();
 })();
