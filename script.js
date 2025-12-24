@@ -145,6 +145,12 @@
     localStorage.setItem('calc_history', JSON.stringify(history));
   }
 
+  // produce a human-friendly plain-text expression for history
+  function formatExpressionForHistoryText(expr){
+    if(typeof expr !== 'string') expr = String(expr);
+    return expr.replace(/\*/g, '×').replace(/\//g, '÷').replace(/pi/g, 'π').replace(/,/g, '');
+  }
+
   function makeScope(){
     // determine if degrees mode is active by checking the selected radio value
     const isDeg = (document.querySelector('input[name="degRad"]:checked') || {}).value === 'deg';
@@ -186,22 +192,40 @@
   function evaluateExpression(raw){
     // use raw expression without commas
     let expr = (raw !== undefined ? raw : exprRaw) || '';
-    // if expression is incomplete (ends with operator, decimal point, or has unmatched open parens),
+    // if expression is incomplete (ends with operator, decimal point, or empty),
     // do not evaluate — show status and leave the expression unchanged
-    if(/[-+*/.]$/.test(expr) || expr.trim() === '' || unmatchedParens > 0 || /\($/.test(expr)){
+    if(/[-+*/.]$/.test(expr) || expr.trim() === ''){
       showStatus('식이 완전하지 않습니다');
       return;
     }
+
+    // if there are unmatched open parens shown as a dimmed ")", append the missing closing parens
+    // and proceed with evaluation (user expects this behavior)
+    if(unmatchedParens > 0 && (raw === undefined || raw === exprRaw)){
+      exprRaw = exprRaw + ')'.repeat(unmatchedParens);
+      // mark that we activated the appended paren for display briefly
+      parenActiveOnEval = true;
+      // update display to show the appended parens
+      display.innerHTML = formatExpressionForDisplayHTML(exprRaw);
+      // ensure expr used for evaluation includes the appended parens
+      expr = exprRaw;
+      // clear unmatchedParens for evaluation
+      unmatchedParens = 0;
+    }
     expr = expr.replace(/,/g, '').replace(/÷/g, '/').replace(/×/g, '*').replace(/π/g, 'pi').replace(/Ans/g, 'Ans');
     expr = expr.replace(/(\d+)!/g, 'factorial($1)');
-    // log10(x) -> (log(x)/log(10))로 치환 (math.js가 log10을 지원하지 않는 경우 대비)
-    expr = expr.replace(/log10\s*\(([^)]+)\)/g, '(log($1)/log(10))');
+    // Treat user-entered `log(...)` (and `log10(...)`) as base-10 log by rewriting to ln(x)/ln(10)
+    // Use `ln` in the replacement to avoid re-matching the inserted `log(` string.
+    expr = expr.replace(/log10\s*\(([^)]+)\)/g, '(ln($1)/ln(10))');
+    expr = expr.replace(/log\s*\(([^)]+)\)/g, '(ln($1)/ln(10))');
     const scope = makeScope();
     clearStatus();
     try{
       const res = math.evaluate(expr, scope);
       ans = res;
-      addHistory(expr, res);
+      // record the expression the user actually typed (formatted for human-readable history)
+      const historyExprRaw = (raw !== undefined ? raw : exprRaw);
+      addHistory(formatExpressionForHistoryText(historyExprRaw), res);
       setDisplay(formatNumber(res));
       // keep exprRaw as plain number for further ops
       exprRaw = String(res);
