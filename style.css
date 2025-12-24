@@ -59,7 +59,8 @@ button:focus{outline:3px solid #bde0ff}
   /* show only the rightmost 4 columns: clip and shift the 7-column grid */
   .buttons-clip{overflow:hidden;width:100%}
   .buttons{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;/* full 7-col grid */
-    width:100%;transform:translateX(calc(-100% * 3 / 7));}
+    /* make the 7-col grid wider so the rightmost 4 columns fill the visible area evenly */
+    width:calc(7/4 * 100%);transform:translateX(calc(-100% * 3 / 7));}
   .buttons button{height:44px;font-size:14px}
   footer{display:none}
 }
@@ -71,8 +72,3 @@ button:focus{outline:3px solid #bde0ff}
   .buttons button{height:50px;font-size:15px}
   .display{height:68px;font-size:22px;padding:10px}
 }
-  .buttons{gap:10px}
-  .buttons button{height:50px;font-size:15px}
-  .display{height:68px;font-size:22px;padding:10px}
-}
-
