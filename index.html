@@ -11,7 +11,7 @@
 <body>
   <main class="calculator">
     <header>
-      <h1>공학용 계산기</h1>
+      <h1 class="main-title">공학용 계산기</h1>
       <label class="theme-label"><input type="checkbox" id="themeToggle"> Dark</label>
     </header>
 
@@ -26,6 +26,8 @@
           <label><input type="radio" id="degRadToggle" name="degRad" value="rad" checked> Rad</label>
         </div>
       </div>
+    <!-- buttons clipped on small portrait screens to show rightmost 4 columns -->
+    <div class="buttons-clip">
     <section class="buttons">
       <!-- row 1 -->
       <button data-value="!">x!</button>
@@ -47,7 +49,7 @@
       <!-- row 3 -->
       <button data-value="pi">π</button>
       <button data-value="cos(">cos</button>
-      <button data-value="log10(">log</button>
+      <button data-value="log(">log</button>
       <button data-value="4">4</button>
       <button data-value="5">5</button>
       <button data-value="6">6</button>
@@ -71,9 +73,10 @@
       <button data-value=".">.</button>
       <button data-value="+">+</button>
     </section>
+    </div>
 
     <footer>
-      <small>공학용 계산기</small>
+      <small></small>
     </footer>
   </main>
 
